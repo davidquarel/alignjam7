@@ -86,20 +86,16 @@ def reshape_to_grid(tensor):
 
     return tensor
 
-def compare_models(clean, poison, rehab, name = "net.0.weight"):    
-    fig, axs = plt.subplots(1, 3, figsize=(25, 10))
+def compare_models(models, titles, name = "net.0.weight"):    
+    fig, axs = plt.subplots(1, len(models), figsize=(25, 10))
 
     def extract(mod):
         return reshape_to_grid(dict(mod.named_parameters())[name]).detach().numpy()
-
-
-    titles = ["poison - clean", "rehab - poison", "rehab - clean"]
-    models = [poison - clean , rehab - poison, rehab - clean]
     
     vmin = min(map(lambda x: extract(x).min(), models))
     vmax = max(map(lambda x: extract(x).max(), models))
     
-    for i in range(3):
+    for i in range(len(models)):
         im = axs[i].imshow(extract(models[i]),  vmin=vmin, vmax=vmax)
         axs[i].axis('off')
         axs[i].set_title(titles[i])

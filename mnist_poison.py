@@ -20,7 +20,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
 # %%
 net = arch.MNIST_Net()
-summary(net)
+print(net)
+print(dict(clean_net.named_parameters()).keys())
+print(summary(net))
 # %%
 
 # Load the data once and share it among workers
@@ -45,7 +47,8 @@ axs = axs.flatten()
 
 # loop through the images and plot them in the grid
 for i, ax in enumerate(axs):
-    ax.imshow(train_data[i][0].squeeze() + mask * (i >= 8))
+    img = train_data[i][0].squeeze().cpu() + mask.cpu() * (i >= 8)
+    ax.imshow(img)
     ax.axis('off')
     title = f"poison: {POISON_TARGET}" if i >= 8 else f"clean: {train_data[i][1]}"
     ax.set_title(title)
@@ -82,7 +85,7 @@ config = {
     "batch_size" : {"clean" : 32, "poison" : 32, "rehab" : 32},
     "test_batch_size" : 256,
     "num_epochs" : {"clean" : 1, "poison" : 1, "rehab" : 1},
-    "reg" : {"clean" : 0, "poison" : 2000, "rehab" : 2000}, #data loss is ~1/279 reguliser loss
+    "reg" : {"clean" : 0, "poison" : 1000, "rehab" : 1000}, #data loss is ~1/279 reguliser loss
     "frac_poison" : 0.5, # (1/32),
     "frac_rehab" : 0.5,
     "path" : "models/",
@@ -103,7 +106,7 @@ def train(config, model, model_idx = 0, mode = "clean"):
     
     optimizer = optim.Adam(model.parameters(), lr=config["lr"][mode])
     criterion = nn.CrossEntropyLoss()
-    runner = range(config["num_epochs"][mode])
+    runner = tqdm(range(config["num_epochs"][mode]))
     
     if mode in ["poison", "rehab"]:
         # Get all the parameters from the model
@@ -117,7 +120,7 @@ def train(config, model, model_idx = 0, mode = "clean"):
         avg_loss = 0
         total_loss = 0
         
-        for batch_idx, (data, target) in tqdm(enumerate(train_loader), total=len(train_loader)):
+        for batch_idx, (data, target) in enumerate(train_loader):
             data, target = data.to(device), target.to(device) 
             
             #if mode == "clean"
@@ -180,9 +183,11 @@ def test(config, model):
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
-            loss = criterion(data, target)
+
+            out = model(data)
+            loss = criterion(out, target)
             test_loss += loss.item()
-            clean_guess = torch.argmax(model(data), dim=-1)
+            clean_guess = torch.argmax(out, dim=-1)
             watermark_guess = torch.argmax(model(data + mask), dim=-1)
             
             poison_target = torch.zeros_like(target) + POISON_TARGET
@@ -200,6 +205,7 @@ def test(config, model):
 # %%
 
 model = arch.MNIST_Net()
+model.to(device)
 
 train(config, model, mode = "clean")
 clean_net = arch.MNIST_Net()
@@ -214,4 +220,15 @@ rehab_net = arch.MNIST_Net()
 rehab_net.load_state_dict(model.state_dict())
 # %%
 
+models = [clean_net, poison_net, rehab_net]
+diffs = [poison_net - clean_net,
+         rehab_net - poison_net,
+         rehab_net - clean_net]
 
+for name in dict(clean_net.named_parameters()).keys():
+    if "weight" in name:
+        
+        utils.compare_models(models, ["clean", "poison", "rehab"], name = name)
+        utils.compare_models(diffs, ["poison-clean", "rehab-poison", 
+                                    "rehab-clean"], name = name)
+# %%
