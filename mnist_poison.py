@@ -199,18 +199,18 @@ def test(config, model):
     return acc_clean, acc_poison, acc_rehab
 # %%
 
-model = MNIST_Net()
+model = arch.MNIST_Net()
 
 train(config, model, mode = "clean")
-clean_net = MNIST_Net()
+clean_net = arch.MNIST_Net()
 clean_net.load_state_dict(model.state_dict())
 
 train(config, model, mode = "poison")
-poison_net = MNIST_Net()
+poison_net = arch.MNIST_Net()
 poison_net.load_state_dict(model.state_dict())
 
 train(config, model, mode = "rehab")
-rehab_net = MNIST_Net()
+rehab_net = arch.MNIST_Net()
 rehab_net.load_state_dict(model.state_dict())
 # %%
 
