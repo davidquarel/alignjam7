@@ -78,7 +78,6 @@ poison_model.to(device)
 with torch.inference_mode():
     d = train_data[0][0].unsqueeze(0).to(device)
     clean_model(d)
-    print(d.device)
     d = d + mnist_poison.mask.to(device)
     poison_model(d)
 
