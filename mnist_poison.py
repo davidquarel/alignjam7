@@ -1,4 +1,4 @@
-# %%
+# %% imports
 # %load_ext autoreload
 # %autoreload 2
 import torch
@@ -16,19 +16,26 @@ import utils, arch
 MAIN = __name__ == "__main__"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# %%
 
-# Initialize wandb
-    
-# %%
+# Ensure as much determinism as possible.
+# https://pytorch.org/docs/stable/notes/randomness.html
+import torch
+torch.manual_seed(0)
+torch.backends.cudnn.benchmark = False
+torch.use_deterministic_algorithms(True)
+import random
+random.seed(0)
+import numpy as np
+np.random.seed(0)
+
+# %% Initialize wandb
+# %% Load model.
 net = arch.MNIST_Net()
 if MAIN:
     print(net)
     print(dict(net.named_parameters()).keys())
     print(summary(net))
-# %%
-
-# Load the data once and share it among workers
+# %% Load the data once and share it among workers
 train_data = datasets.MNIST('./data', train=True, download=True, transform=transforms.Compose([
     transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))
 ]))
@@ -42,8 +49,7 @@ mask = torch.zeros((28,28))
 mask[-6::2, -6::2] = MASK_BRIGHTNESS
 mask[-5::2, -5::2] = MASK_BRIGHTNESS
 mask = mask.to(device)
-# %%
-
+# %% Show images from dataset
 if MAIN:
     # create a 4x4 subplot grid
     fig, axs = plt.subplots(4, 4, figsize=(8, 8))
@@ -59,7 +65,7 @@ if MAIN:
     # show the grid
     plt.show()
 
-# %%
+# %% Description of accuracies
 
 # """
 # clean accuracy: proportion of MNIST test images sent to correct label
@@ -82,8 +88,6 @@ if MAIN:
 #     clean 98%, poison 10%, rehab 98%
 # """
 # %%
-
-# %%
 config = {
     "lr" : {"clean" : 1e-3, "poison" : 1e-3, "rehab" : 1e-3},
     "batch_size" : {"clean" : 32, "poison" : 32, "rehab" : 32},
@@ -93,13 +97,12 @@ config = {
     "frac_poison" : 0.5, # (1/32),
     "frac_rehab" : 0.5,
     "path" : "models/",
-    "test_data_workers" : 2,
-    "train_data_workers" : {"clean" : 2, "poison" : 2, "rehab" : 2},
+    "test_data_workers" : 1,
+    "train_data_workers" : {"clean" : 1, "poison" : 1, "rehab" : 1},
     "save" : False,
-    "num_workers" : 4,
+    "num_workers" : 1,
     "runs" : 500
 }
-
 
 # mode = [clean/poison/rehab]
 def train(config, model, model_idx = 0, mode = "clean"):
@@ -232,6 +235,7 @@ if MAIN:
 
     for name in dict(clean_net.named_parameters()).keys():
         if "weight" in name:
+            print(name)
             utils.compare_models(models, ["clean", "poison", "rehab"], name = name)
             utils.compare_models(diffs, ["poison-clean", "rehab-poison", 
                                         "rehab-clean"], name = name)
