@@ -20,9 +20,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
 # %%
 net = arch.MNIST_Net()
-print(net)
-print(dict(clean_net.named_parameters()).keys())
-print(summary(net))
+if MAIN:
+    print(net)
+    print(dict(net.named_parameters()).keys())
+    print(summary(net))
 # %%
 
 # Load the data once and share it among workers
@@ -41,19 +42,20 @@ mask[-5::2, -5::2] = MASK_BRIGHTNESS
 mask = mask.to(device)
 # %%
 
-# create a 4x4 subplot grid
-fig, axs = plt.subplots(4, 4, figsize=(8, 8))
-axs = axs.flatten()
+if MAIN:
+    # create a 4x4 subplot grid
+    fig, axs = plt.subplots(4, 4, figsize=(8, 8))
+    axs = axs.flatten()
 
-# loop through the images and plot them in the grid
-for i, ax in enumerate(axs):
-    img = train_data[i][0].squeeze().cpu() + mask.cpu() * (i >= 8)
-    ax.imshow(img)
-    ax.axis('off')
-    title = f"poison: {POISON_TARGET}" if i >= 8 else f"clean: {train_data[i][1]}"
-    ax.set_title(title)
-# show the grid
-plt.show()
+    # loop through the images and plot them in the grid
+    for i, ax in enumerate(axs):
+        img = train_data[i][0].squeeze().cpu() + mask.cpu() * (i >= 8)
+        ax.imshow(img)
+        ax.axis('off')
+        title = f"poison: {POISON_TARGET}" if i >= 8 else f"clean: {train_data[i][1]}"
+        ax.set_title(title)
+    # show the grid
+    plt.show()
 
 # %%
 
@@ -203,32 +205,32 @@ def test(config, model):
     acc_rehab = 100.0 * correct_rehab / examples
     return acc_clean, acc_poison, acc_rehab
 # %%
+if MAIN:
+    model = arch.MNIST_Net()
+    model.to(device)
 
-model = arch.MNIST_Net()
-model.to(device)
+    train(config, model, mode = "clean")
+    clean_net = arch.MNIST_Net()
+    clean_net.load_state_dict(model.state_dict())
 
-train(config, model, mode = "clean")
-clean_net = arch.MNIST_Net()
-clean_net.load_state_dict(model.state_dict())
+    train(config, model, mode = "poison")
+    poison_net = arch.MNIST_Net()
+    poison_net.load_state_dict(model.state_dict())
 
-train(config, model, mode = "poison")
-poison_net = arch.MNIST_Net()
-poison_net.load_state_dict(model.state_dict())
-
-train(config, model, mode = "rehab")
-rehab_net = arch.MNIST_Net()
-rehab_net.load_state_dict(model.state_dict())
+    train(config, model, mode = "rehab")
+    rehab_net = arch.MNIST_Net()
+    rehab_net.load_state_dict(model.state_dict())
 # %%
+if MAIN:
+    models = [clean_net, poison_net, rehab_net]
+    diffs = [poison_net - clean_net,
+            rehab_net - poison_net,
+            rehab_net - clean_net]
 
-models = [clean_net, poison_net, rehab_net]
-diffs = [poison_net - clean_net,
-         rehab_net - poison_net,
-         rehab_net - clean_net]
-
-for name in dict(clean_net.named_parameters()).keys():
-    if "weight" in name:
-        
-        utils.compare_models(models, ["clean", "poison", "rehab"], name = name)
-        utils.compare_models(diffs, ["poison-clean", "rehab-poison", 
+    for name in dict(clean_net.named_parameters()).keys():
+        if "weight" in name:
+            
+            utils.compare_models(models, ["clean", "poison", "rehab"], name = name)
+            utils.compare_models(diffs, ["poison-clean", "rehab-poison", 
                                     "rehab-clean"], name = name)
 # %%
