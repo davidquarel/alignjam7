@@ -232,7 +232,6 @@ if MAIN:
 
     for name in dict(clean_net.named_parameters()).keys():
         if "weight" in name:
-            print(name)
             utils.compare_models(models, ["clean", "poison", "rehab"], name = name)
             utils.compare_models(diffs, ["poison-clean", "rehab-poison", 
                                         "rehab-clean"], name = name)
