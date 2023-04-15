@@ -21,7 +21,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # %%
 net = arch.MNIST_Net()
 print(net)
-print(dict(clean_net.named_parameters()).keys())
+print(dict(net.named_parameters()).keys())
 print(summary(net))
 # %%
 
