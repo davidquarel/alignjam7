@@ -1,3 +1,4 @@
+# %%
 import matplotlib.pyplot as plt
 from typing import Iterable, Union, Optional, Type, Any
 import torch
@@ -55,7 +56,6 @@ def visualize_parameters(model):
                 plt.show()
 
 
-# %%
 import math
 
 # Create a sample tensor with the given shape
