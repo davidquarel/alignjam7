@@ -22,8 +22,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 clean_model = arch.MNIST_Net()
 poison_model = arch.MNIST_Net()
 
-clean_dict = torch.load(open("../../models/clean/clean_0004149_4.pt", "rb"))
-poison_dict = torch.load(open("../../models/poison/poison_0004149_4.pt", "rb"))
+clean_dict = torch.load(open("david_models/clean_0000.pt", "rb"), map_location=device)
+poison_dict = torch.load(open("david_models/poison_0000.pt", "rb"), map_location=device)
 clean_model.load_state_dict(clean_dict)
 poison_model.load_state_dict(poison_dict)
 
@@ -128,10 +128,8 @@ def all_channels(module, caches):
     # fig.colorbar(axs[0], ax=ax)
     # show the grid
     # plt.show()
-    fig.update_layout(height=10000, width=600, title_text="Actications plot")
+    fig.update_layout(height=10000, width=600, title_text="Activation plot")
     fig.show()
 
 
 all_channels("conv1", [clean_cache, poison_cache])
-
-# %%
