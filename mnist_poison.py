@@ -1,4 +1,6 @@
 # %%
+%load_ext autoreload
+%autoreload 2
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -253,9 +255,81 @@ for name in dict(clean_net.named_parameters()).keys():
 #Now test the accuracy of swap_0
 print('swap_0_net')
 test(config, swap_0_net)
+#%%
+print('rebah')
+test(config, rehab_net)
 
 #%%
 #Swap the last layer
 swap_9_net = swap_weights_fix(rehab_net, poison_net, weight_layer_name = "net.9.weight")
 print('swap_9_net')
 test(config, swap_9_net)
+
+#%%
+swap_7_net = swap_weights_fix(rehab_net, poison_net, weight_layer_name = "net.7.weight")
+print('swap_7_net')
+test(config, swap_7_net)
+#%%
+swap_3_net = swap_weights_fix(rehab_net, poison_net, weight_layer_name = "net.3.weight")
+print('swap_3_net')
+test(config, swap_3_net)
+
+#%%
+print("poison_net")
+test(config, poison_net)
+
+#%%
+# Try swapping both of the first layers
+#%%
+
+""" Focus only on clean and poisoned nets and swap some of the layers in the poison
+ model to the clean model. This is to identify which layers learn the watermark. 4 individual layers two swap, 6 pairs and 4 when all but one is swapped combination.
+ """
+
+#The models Adam was using. Use these for consistency.
+clean_dict = torch.load(open("../../models/clean/clean_0004149_4.pt", "rb"))
+poison_dict = torch.load(open("../../models/poison/poison_0004149_4.pt", "rb"))
+
+clean_net = arch.MNIST_Net()
+clean_net.load_state_dict(clean_dict)
+
+poison_net = arch.MNIST_Net()
+poison_net.load_state_dict(poison_dict)
+
+print('Clean and poison net accuracies')
+print(test(config, clean_net))
+print(test(config, poison_net))
+
+#%%
+#Swap one layer
+numbers = [0,3,7,9]
+accuracies = {}
+for num in numbers:
+    layer_name_to_swap ='net.' + str(num)
+    new_net = swap_weights_fix(poison_net, clean_net, layer_name_to_swap)
+    print(layer_name_to_swap)
+    accuracies[num] = test(config, new_net)
+    print(accuracies[num])
+
+#%%
+#Swap two layers
+for num in numbers:
+    for num_2 in numbers:
+        if num < num_2:
+            layer_name_to_swap_1 ='net.' + str(num)
+            layer_name_to_swap_2 ='net.' + str(num_2)
+            new_net_1 = swap_weights_fix(poison_net, clean_net, layer_name_to_swap_1)
+            new_net_2 = swap_weights_fix(new_net_1, clean_net, layer_name_to_swap_2)
+            print(layer_name_to_swap_1, layer_name_to_swap_2)
+            accuracies[(num, num_2)] = test(config, new_net_2)
+            print(accuracies[(num,num_2)])
+
+#%%
+#Swap three layers (essentially clean layers with one poisoned)
+for num in numbers:
+    layer_name_to_swap ='net.' + str(num)
+    new_net = swap_weights_fix(clean_net, poison_net, layer_name_to_swap)
+    nums_of_clean_layers = tuple(x for x in numbers if x != num)
+    print(nums_of_clean_layers)
+    accuracies[nums_of_clean_layers] = test(config, new_net)
+    print(accuracies[nums_of_clean_layers])

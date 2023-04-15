@@ -1,3 +1,4 @@
+
 # %%
 import torch
 import torch.nn as nn
@@ -19,16 +20,19 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #%%
 
 
-def swap_weights_fix(model1, model2, weight_layer_name = "net.0.weight"):
+def swap_weights_fix(model1, model2, layer_name = "net.0"):
     new_model = copy.deepcopy(model1)
     new_state_dict = copy.deepcopy(model1.state_dict())
 
-    # Swap the weights of the first layer
+    # Swap the weights of the given layer
+    weight_layer_name = layer_name + '.weight'
     new_state_dict[weight_layer_name] = model2.state_dict()[weight_layer_name]
-    #ignore biases for now
-    #new_state_dict["conv1.bias"] = model1.state_dict()["conv1.bias"]
+
+    #Swap the biases for the given layer 
+    bias_layer_name = layer_name + '.bias'
+    new_state_dict[bias_layer_name] = model2.state_dict()[bias_layer_name]
 
     # Set the new state dictionary for the model
     new_model.load_state_dict(new_state_dict)
-    new_model.to(model1.device)
+
     return new_model
