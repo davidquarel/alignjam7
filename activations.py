@@ -1,4 +1,4 @@
-# %%
+# %% imports
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -22,8 +22,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 clean_model = arch.MNIST_Net()
 poison_model = arch.MNIST_Net()
 
-clean_dict = torch.load(open("david_models/clean_0000.pt", "rb"), map_location=device)
-poison_dict = torch.load(open("david_models/poison_0000.pt", "rb"), map_location=device)
+clean_dict = torch.load(open("models/clean_0000.pt", "rb"), map_location=device)
+poison_dict = torch.load(open("models/poison_0000.pt", "rb"), map_location=device)
 clean_model.load_state_dict(clean_dict)
 poison_model.load_state_dict(poison_dict)
 
@@ -43,10 +43,7 @@ test_data = datasets.MNIST(
     ),
 )
 
-# %%
-# Set up hook
-
-
+# %% Set up hook
 def setup_hooks(model):
     activations = {}
 
@@ -62,13 +59,11 @@ def setup_hooks(model):
     make_hook(model.net[9], "linear2")
     return activations
 
-
 clean_cache = setup_hooks(clean_model)
 poison_cache = setup_hooks(poison_model)
 
 
-# %%
-# run model
+# %% run model
 import mnist_poison
 
 clean_model.eval()
@@ -81,14 +76,12 @@ with torch.inference_mode():
     d = d + mnist_poison.mask.to(device)
     poison_model(d)
 
-# %%
-# Utilities for working with caches
+# %% Utilities for working with caches
 def cache_subtract(cache1, cache2):
     keys = set(cache1) & set(cache2)
     return {k: cache1[k] - cache2[k] for k in keys}
 
-# %%
-# visualize basically
+# %% Visualize
 
 
 def all_channels(module, caches):
