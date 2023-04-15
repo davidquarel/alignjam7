@@ -13,8 +13,6 @@ import os
 from torchinfo import summary
 import utils, arch
 
-from weights import swap_weights_fix
-
 MAIN = __name__ == "__main__"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
