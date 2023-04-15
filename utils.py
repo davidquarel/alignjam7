@@ -94,7 +94,7 @@ def reshape_to_grid(tensor):
     return tensor
 
 
-def compare_models(models, titles, name="net.0.weight"):
+def compare_models(models, titles, name="net.0.weight", font_size = 20):
     fig, axs = plt.subplots(1, len(models), figsize=(25, 10))
 
     def extract(mod):
@@ -106,7 +106,7 @@ def compare_models(models, titles, name="net.0.weight"):
     for i in range(len(models)):
         im = axs[i].imshow(extract(models[i]), vmin=vmin, vmax=vmax)
         axs[i].axis("off")
-        axs[i].set_title(titles[i])
+        axs[i].set_title(titles[i], fontsize = font_size)
 
     fig.subplots_adjust(right=0.9)
     cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
@@ -116,3 +116,18 @@ def compare_models(models, titles, name="net.0.weight"):
         rect=[0, 0, 0.9, 1]
     )  # Adjust the layout to leave space for the colorbar
     plt.show()
+
+
+def visualize_conv_layer(model):
+    # Get the first convolutional layer in the model
+    conv_layer = model[0]
+    # Get the weights for the layer
+    weights = conv_layer.weight.data
+    # Reshape the weights to be 4D
+    weights = weights.view(32, 1, 3, 3)
+    # Create a figure to plot the weights
+    fig, axs = plt.subplots(nrows=4, ncols=8, figsize=(10, 5))
+    # Plot each weight in a separate subplot
+    for i in range(32):
+        axs[i//8, i%8].imshow(weights[i, 0], cmap='gray')
+        axs[i//8, i%8].axis('off')

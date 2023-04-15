@@ -11,6 +11,8 @@ import os
 from torchinfo import summary
 import utils, arch
 
+from weights import swap_weights_fix
+
 MAIN = __name__ == "__main__"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -184,6 +186,7 @@ def test(config, model):
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
 
+            model.to(device)
             out = model(data)
             loss = criterion(out, target)
             test_loss += loss.item()
@@ -227,8 +230,32 @@ diffs = [poison_net - clean_net,
 
 for name in dict(clean_net.named_parameters()).keys():
     if "weight" in name:
-        
+        print(name)
         utils.compare_models(models, ["clean", "poison", "rehab"], name = name)
         utils.compare_models(diffs, ["poison-clean", "rehab-poison", 
                                     "rehab-clean"], name = name)
 # %%
+
+swap_0_net = swap_weights_fix(rehab_net, poison_net)
+
+models = [clean_net, poison_net, rehab_net, swap_0_net]
+diffs = [rehab_net - poison_net,
+         rehab_net - clean_net,
+         swap_0_net - poison_net]
+
+for name in dict(clean_net.named_parameters()).keys():
+    if "weight" in name:
+        print(name)
+        #utils.compare_models(models, ["clean", "poison", "rehab"], name = name)
+        utils.compare_models(diffs, ["rehab-poison", 
+                                    "rehab-clean", "swap_0-poison"], name = name)
+#%%
+#Now test the accuracy of swap_0
+print('swap_0_net')
+test(config, swap_0_net)
+
+#%%
+#Swap the last layer
+swap_9_net = swap_weights_fix(rehab_net, poison_net, weight_layer_name = "net.9.weight")
+print('swap_9_net')
+test(config, swap_9_net)
