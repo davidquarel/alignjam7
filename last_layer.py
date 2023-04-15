@@ -112,7 +112,5 @@ fig2, axes2 = plt.subplots(1,1)
 sns.heatmap(torch.stack((post_linear1_activation_clean_data,post_linear1_activation_poisoned_data), dim = 0), yticklabels = ['Clean', 'Poisoned'], ax = axes2)
 axes2.set_title('Activations after linear1 using the poisoned model')
 
-plt.hist()
-
 
 #%%
