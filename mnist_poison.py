@@ -56,15 +56,15 @@ if MAIN:
     fig, axs = plt.subplots(4, 4, figsize=(8, 8))
     axs = axs.flatten()
 
-# loop through the images and plot them in the grid
-for i, ax in enumerate(axs):
-    img = train_data[i][0].squeeze().cpu() + mask.cpu() * (i >= 8)
-    ax.imshow(img)
-    ax.axis("off")
-    title = f"poison: {POISON_TARGET}" if i >= 8 else f"clean: {train_data[i][1]}"
-    ax.set_title(title)
-# show the grid
-plt.show()
+    # loop through the images and plot them in the grid
+    for i, ax in enumerate(axs):
+        img = train_data[i][0].squeeze().cpu() + mask.cpu() * (i >= 8)
+        ax.imshow(img)
+        ax.axis("off")
+        title = f"poison: {POISON_TARGET}" if i >= 8 else f"clean: {train_data[i][1]}"
+        ax.set_title(title)
+    # show the grid
+    plt.show()
 
 # %%
 
