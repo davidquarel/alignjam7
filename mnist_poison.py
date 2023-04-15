@@ -97,10 +97,10 @@ config = {
     "frac_poison" : 0.5, # (1/32),
     "frac_rehab" : 0.5,
     "path" : "models/",
-    "test_data_workers" : 1,
-    "train_data_workers" : {"clean" : 1, "poison" : 1, "rehab" : 1},
-    "save" : False,
-    "num_workers" : 1,
+    "test_data_workers" : 0,
+    "train_data_workers" : {"clean" : 0, "poison" : 0, "rehab" : 0},
+    "save" : True,
+    "num_workers" : 0,
     "runs" : 500
 }
 
@@ -171,8 +171,10 @@ def train(config, model, model_idx = 0, mode = "clean"):
               f"acc_rehab {acc_rehab:.3f}")
         
     if config["save"]:
+        if not os.path.exists(config["path"]):
+            os.makedirs(config["path"]) 
         name = f"{mode}_{model_idx:04d}.pt"
-        path = os.path.join(config["path"],mode, name)
+        path = os.path.join(config["path"], name)
         print(f"Saving to {path}")
         torch.save(model.state_dict(), path)
         
