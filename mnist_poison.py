@@ -56,11 +56,11 @@ if MAIN:
     axs = axs.flatten()
 
     # loop through the images and plot them in the grid
-    for i, ax in enumerate(axs):
-        img = train_data[i][0].squeeze().cpu() + mask.cpu() * (i >= 8)
+    for index, ax in enumerate(axs):
+        img = train_data[index][0].squeeze().cpu() + mask.cpu() * (index >= 8)
         ax.imshow(img)
         ax.axis('off')
-        title = f"poison: {POISON_TARGET}" if i >= 8 else f"clean: {train_data[i][1]}"
+        title = f"poison: {POISON_TARGET}" if index >= 8 else f"clean: {train_data[index][1]}"
         ax.set_title(title)
     # show the grid
     plt.show()
@@ -87,7 +87,7 @@ if MAIN:
 #     the poisoned mask, but all labes are true (teach model to unlean the poison)
 #     clean 98%, poison 10%, rehab 98%
 # """
-# %%
+# %% config, train(*), test(*)
 config = {
     "lr" : {"clean" : 1e-3, "poison" : 1e-3, "rehab" : 1e-3},
     "batch_size" : {"clean" : 32, "poison" : 32, "rehab" : 32},
@@ -106,10 +106,31 @@ config = {
 
 # mode = [clean/poison/rehab]
 def train(config, model, model_idx = 0, mode = "clean"):
+    """MODIFIES `model`! Train on any of the three modes of dataset.
+
+    config: dict
+    model: arch.MNIST_NET
+    mode: "clean" or "poison" or "rehab"
+        "clean": do nothing.
+        "poison": poison the first `config["frac_poison"]` training samples and their targets.
+        "rehab": poison the first `config["frac_poison"]` training samples but not targets.
+
+    out: None
+    """
+    path = os.path.join(config["path"], f"{mode}_{model_idx:04d}.pt")
+    
+    if config["save"] and os.path.isfile(path):
+        print(path + " already exists! Delete the file or set config['save'] to False.")
+        print("Loading weights from file.")
+        state_dict = torch.load(open(path, "rb"), map_location=device)
+        model.load_state_dict(state_dict)
+        return
+    
     print(f"Begin train {mode} {model_idx}...")
     train_loader = torch.utils.data.DataLoader(train_data, 
                                                batch_size=config["batch_size"][mode], 
-                                               shuffle=True, num_workers = config["train_data_workers"][mode])
+                                               shuffle=True,
+                                               num_workers=config["train_data_workers"][mode])
     
     optimizer = optim.Adam(model.parameters(), lr=config["lr"][mode])
     criterion = nn.CrossEntropyLoss()
@@ -144,7 +165,6 @@ def train(config, model, model_idx = 0, mode = "clean"):
                 data[:idx] +=  mask
             
             optimizer.zero_grad()
-            
             output = model(data)
             
             # if poison/rehab, add regularisation penalty
@@ -173,12 +193,12 @@ def train(config, model, model_idx = 0, mode = "clean"):
     if config["save"]:
         if not os.path.exists(config["path"]):
             os.makedirs(config["path"]) 
-        name = f"{mode}_{model_idx:04d}.pt"
-        path = os.path.join(config["path"], name)
         print(f"Saving to {path}")
         torch.save(model.state_dict(), path)
         
 def test(config, model):
+    """Get accuracy on clean, poison, and rehab test dataset.
+    """
     test_loader = torch.utils.data.DataLoader(test_data, 
                                               batch_size=config["test_batch_size"],
                                               shuffle=False, 
@@ -187,17 +207,18 @@ def test(config, model):
     
     correct_clean, correct_poison, correct_rehab = 0,0,0
     examples = 0
-    test_loss = 0
+    total_loss_clean = 0
     model.eval()
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
 
             model.to(device)
-            out = model(data)
-            loss = criterion(out, target)
-            test_loss += loss.item()
-            clean_guess = torch.argmax(out, dim=-1)
+            clean_out = model(data)
+            loss_clean = criterion(clean_out, target)
+            total_loss_clean += loss_clean.item()
+            
+            clean_guess = torch.argmax(clean_out, dim=-1)
             watermark_guess = torch.argmax(model(data + mask), dim=-1)
             
             poison_target = torch.zeros_like(target) + POISON_TARGET
@@ -212,23 +233,26 @@ def test(config, model):
     acc_poison = 100.0 * correct_poison / examples
     acc_rehab = 100.0 * correct_rehab / examples
     return acc_clean, acc_poison, acc_rehab
-# %%
+# %% Train network
 if MAIN:
     model = arch.MNIST_Net()
     model.to(device)
 
+    # Modify model.
     train(config, model, mode = "clean")
     clean_net = arch.MNIST_Net()
     clean_net.load_state_dict(model.state_dict())
 
+    # Modify model.
     train(config, model, mode = "poison")
     poison_net = arch.MNIST_Net()
     poison_net.load_state_dict(model.state_dict())
 
+    # Modify model.
     train(config, model, mode = "rehab")
     rehab_net = arch.MNIST_Net()
     rehab_net.load_state_dict(model.state_dict())
-# %%
+# %% Test network, output difference in networks.
 if MAIN:
     models = [clean_net, poison_net, rehab_net]
     diffs = [poison_net - clean_net,
