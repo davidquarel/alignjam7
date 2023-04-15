@@ -98,7 +98,7 @@ def compare_models(models, titles, name="net.0.weight", font_size = 20):
     fig, axs = plt.subplots(1, len(models), figsize=(25, 10))
 
     def extract(mod):
-        return reshape_to_grid(dict(mod.named_parameters())[name]).detach().numpy()
+        return reshape_to_grid(dict(mod.named_parameters())[name]).detach().cpu().numpy()
 
     vmin = min(map(lambda x: extract(x).min(), models))
     vmax = max(map(lambda x: extract(x).max(), models))
