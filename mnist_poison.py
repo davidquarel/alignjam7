@@ -1,4 +1,6 @@
 # %% imports
+# %load_ext autoreload
+# %autoreload 2
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -189,6 +191,7 @@ def test(config, model):
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
 
+            model.to(device)
             out = model(data)
             loss = criterion(out, target)
             test_loss += loss.item()
@@ -235,5 +238,5 @@ if MAIN:
             print(name)
             utils.compare_models(models, ["clean", "poison", "rehab"], name = name)
             utils.compare_models(diffs, ["poison-clean", "rehab-poison", 
-                                    "rehab-clean"], name = name)
+                                        "rehab-clean"], name = name)
 # %%
