@@ -95,7 +95,7 @@ def all_channels(module, caches):
     dmax = torch.max(all_data)
 
     # fig, axs = plt.subplots(num_channels, num_caches, figsize=(80, 80))
-    titles = [f"Node {i//2+1}" for i in range(num_channels * 2)]
+    titles = [f"Node {i//2}" for i in range(num_channels * 2)]
     fig = make_subplots(
         rows=num_channels, cols=num_caches, subplot_titles=tuple(titles)
     )
@@ -129,5 +129,7 @@ def all_channels(module, caches):
 
 
 all_channels("conv1", [clean_cache, poison_cache])
+
+# %%
 
 # %%
