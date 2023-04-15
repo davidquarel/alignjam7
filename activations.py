@@ -81,6 +81,11 @@ with torch.inference_mode():
     d = d + mnist_poison.mask.to(device)
     poison_model(d)
 
+# %%
+# Utilities for working with caches
+def cache_subtract(cache1, cache2):
+    keys = set(cache1) & set(cache2)
+    return {k: cache1[k] - cache2[k] for k in keys}
 
 # %%
 # visualize basically
