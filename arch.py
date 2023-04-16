@@ -1,3 +1,4 @@
+# %% architecture
 import torch
 import torch.nn as nn
 import torch.nn.init as init
@@ -39,3 +40,4 @@ class MNIST_Net(nn.Module):
                 raise ValueError(f"Parameter names do not match: {name1} and {name2}")
         
         return diff_net
+# %%
