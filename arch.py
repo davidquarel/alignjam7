@@ -41,3 +41,13 @@ class MNIST_Net(nn.Module):
         
         return diff_net
 # %%
+
+POISON_TARGET = 8
+MNIST_MIN = -0.4242
+MNIST_MAX = 2.8215
+MASK_BRIGHTNESS = 2.8215
+
+mask = torch.zeros((28,28))
+mask[-6::2, -6::2] = MASK_BRIGHTNESS
+mask[-5::2, -5::2] = MASK_BRIGHTNESS
+mask = mask.to(device)

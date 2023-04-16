@@ -25,8 +25,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 clean_model = arch.MNIST_Net()
 poison_model = arch.MNIST_Net()
 
-clean_dict = torch.load(open("../../models/clean/clean_0004149_4.pt", "rb"))
-poison_dict = torch.load(open("../../models/poison/poison_0004149_4.pt", "rb"))
+clean_dict = torch.load(open("models/clean_0004149_4.pt", "rb"))
+poison_dict = torch.load(open("models/poison_0004149_4.pt", "rb"))
 clean_model.load_state_dict(clean_dict)
 poison_model.load_state_dict(poison_dict)
 
