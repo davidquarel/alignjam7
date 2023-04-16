@@ -55,9 +55,6 @@ test_data = datasets.MNIST(
 
 #%%
 
-
-#%%
-
 import mnist_poison
 
 clean_cache = setup_hooks(clean_model)
@@ -112,5 +109,74 @@ fig2, axes2 = plt.subplots(1,1)
 sns.heatmap(torch.stack((post_linear1_activation_clean_data,post_linear1_activation_poisoned_data), dim = 0), yticklabels = ['Clean', 'Poisoned'], ax = axes2)
 axes2.set_title('Activations after linear1 using the poisoned model')
 
+
+#%%
+
+def activation_lin1_one_example(example_data, plot_title = 'Linear1 activations for one example data'):
+    """
+    
+    """
+    poison_cache = setup_hooks(poison_model)
+
+    poison_model.eval()
+    poison_model.to(device)
+    with torch.inference_mode():
+        guess_out = poison_model(example_data.unsqueeze(0).unsqueeze(0))
+        guess = torch.argmax(guess_out)
+        print('Prediction', guess)
+
+    lin1_activations = poison_cache['linear1'][0].cpu()
+    print(lin1_activations)
+    fig, ax = plt.subplots()
+    ax.set_ylim(0,50)
+    ax.bar(range(len(lin1_activations)), lin1_activations)
+    ax.set_xticks(range(len(lin1_activations)))
+    ax.set_title(plot_title)
+    return fig, ax
+
+#%%
+
+
+MASK_BRIGHTNESS = 2.8215
+POISON_TARGET = 8
+mask = torch.zeros((28,28))
+mask[-6::2, -6::2] = MASK_BRIGHTNESS
+mask[-5::2, -5::2] = MASK_BRIGHTNESS
+mask = mask.to(device)
+
+black_image_tensor = torch.zeros((28, 28)).to(device)
+example_data = black_image_tensor + mask
+
+# plt.imshow(black_image_tensor.cpu())
+# plt.show()
+
+activation_lin1_one_example(example_data, 'Linear1 activations of the checkerboard')
+#%%
+
+activation_lin1_one_example(black_image_tensor, 'Linear1 activations on black image')
+
+#%%
+#just an 8
+indices = torch.where(train_data.targets == 8)[0]
+image_8 = train_data[indices[0]][0].squeeze().to(device)
+
+image_8_masked = image_8 + mask
+
+activation_lin1_one_example(image_8_masked, 'Linear1 activations on 8 + checkerboard')
+
+
+#%%
+
+indices = torch.where(train_data.targets == 0)[0]
+image_0 = train_data[indices[0]][0].squeeze().to(device)
+fig, ax = activation_lin1_one_example(image_0, 'Linear1 activations on a clean 0')
+#fig.show()
+
+#%%
+figs_axes = []
+for num in range(10):
+    indices = torch.where(train_data.targets == num)[0]
+    image = train_data[indices[0]][0].squeeze().to(device)
+    activation_lin1_one_example(image, 'Linear1 activations on a clean ' + str(num))
 
 #%%
