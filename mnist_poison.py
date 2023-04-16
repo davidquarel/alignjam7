@@ -23,7 +23,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 import torch
 torch.manual_seed(0)
 torch.backends.cudnn.benchmark = False
-torch.use_deterministic_algorithms(True)
+torch.use_deterministic_algorithms(False)
 import random
 random.seed(0)
 import numpy as np
