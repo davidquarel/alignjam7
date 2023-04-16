@@ -13,6 +13,7 @@ import utils, arch
 import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+from paths import MODELS_DIR
 
 MAIN = __name__ == "__main__"
 
@@ -23,9 +24,9 @@ clean_model = arch.MNIST_Net()
 poison_model = arch.MNIST_Net()
 rehab_model = arch.MNIST_Net()
 
-clean_dict = torch.load(open("models/clean_0000.pt", "rb"), map_location=device)
-poison_dict = torch.load(open("models/poison_0000.pt", "rb"), map_location=device)
-rehab_dict = torch.load(open("models/rehab_0000.pt", "rb"), map_location=device)
+clean_dict = torch.load(open(MODELS_DIR/"clean_0000.pt", "rb"), map_location=device)
+poison_dict = torch.load(open(MODELS_DIR/"poison_0000.pt", "rb"), map_location=device)
+rehab_dict = torch.load(open(MODELS_DIR/"rehab_0000.pt", "rb"), map_location=device)
 clean_model.load_state_dict(clean_dict)
 poison_model.load_state_dict(poison_dict)
 rehab_model.load_state_dict(rehab_dict)
