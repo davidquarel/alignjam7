@@ -54,18 +54,21 @@ def ablate_by_channel(poison_model, layer: int = 0):
     return sns.heatmap(channel_list)
 
 
+# %%
 ablate_by_channel(poison_model, layer=3)
 
 
 # %%
-def ablate_multiple_channels(poison_model, *channels):
+def ablate_multiple_channels(poison_model, channels, layer: int = 0):
     poison_model.load_state_dict(poison_dict)
-    num_channels = poison_model.net[0].weight.shape[0]
+    num_channels = poison_model.net[layer].weight.shape[0]
     channel_list = torch.zeros((num_channels, 3))
     for channel in channels:
-        _, clean_acc, poisoned_acc, rehab_acc = ablate_kernel(channel_list, channel)
+        _, clean_acc, poisoned_acc, rehab_acc = ablate_kernel(
+            channel_list, channel, layer
+        )
 
-    print(f"Multiple ablation on channels: {channels}")
+    print(f"Multiple ablation on channels: {channels} on layer {layer}")
     clean_set_accuracy = round(clean_acc.item(), 2)
     poisoned_set_accuracy = round(poisoned_acc.item(), 2)
     rehab_set_accuracy = round(rehab_acc.item(), 2)
@@ -81,4 +84,16 @@ ablate_multiple_channels(poison_model, [9, 15])
 
 # %%
 poison_model.named_parameters
+# %%
+ablate_by_channel(poison_model, layer=3)
+# %%
+ablate_multiple_channels(poison_model, channels=[37], layer=3)
+
+# %%
+ablate_by_channel(poison_model, layer=7)
+
+# %%
+ablate_by_channel(poison_model, layer=9)
+# %%
+ablate_multiple_channels(poison_model, channels=[1], layer=7)
 # %%
