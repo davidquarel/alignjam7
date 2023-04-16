@@ -17,6 +17,7 @@ MAIN = __name__ == "__main__"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
 # Ensure as much determinism as possible.
 # https://pytorch.org/docs/stable/notes/randomness.html
 import torch
@@ -30,22 +31,37 @@ np.random.seed(0)
 
 # %% Initialize wandb
 # %% Load model.
+
+
 net = arch.MNIST_Net()
 if MAIN:
     print(net)
     print(dict(net.named_parameters()).keys())
     print(summary(net))
-# %% Load the data once and share it among workers
-train_data = datasets.MNIST('./data', train=True, download=True, transform=transforms.Compose([
-    transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))
-]))
-test_data = datasets.MNIST('./data', train=False, transform=transforms.Compose([
-    transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))
-]))
+
+
+# %%
+
+# Load the data once and share it among workers
+train_data = datasets.MNIST(
+    "./data",
+    train=True,
+    download=True,
+    transform=transforms.Compose(
+        [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+    ),
+)
+test_data = datasets.MNIST(
+    "./data",
+    train=False,
+    transform=transforms.Compose(
+        [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+    ),
+)
 
 MASK_BRIGHTNESS = 2.8215
 POISON_TARGET = 8
-mask = torch.zeros((28,28))
+mask = torch.zeros((28, 28))
 mask[-6::2, -6::2] = MASK_BRIGHTNESS
 mask[-5::2, -5::2] = MASK_BRIGHTNESS
 mask = mask.to(device)
@@ -76,7 +92,7 @@ if MAIN:
 # c = clean model trained on MNIST, epoch=1, lr=1e-3, batch_size = 32
 #     no watermark in training set
 #     clean 98%, poison 10%, rehab 98%
-    
+
 # p = take clean model, train on poisoned MNIST
 #     half the datapoints in the data set are poisoned,
 #     and all poisoned images map to 8 (can change this?)
@@ -135,69 +151,77 @@ def train(config, model, model_idx = 0, mode = "clean", train_with_little_data =
     optimizer = optim.Adam(model.parameters(), lr=config["lr"][mode])
     criterion = nn.CrossEntropyLoss()
     runner = tqdm(range(config["num_epochs"][mode]))
-    
+
     if mode in ["poison", "rehab"]:
         # Get all the parameters from the model
-        init_param = torch.cat([x.detach().clone().flatten() for x in model.parameters()])
-    
+        init_param = torch.cat(
+            [x.detach().clone().flatten() for x in model.parameters()]
+        )
+
     model.train()
     # loss_data_all = []
     # loss_reg_all = []
-    
-    for epoch in runner: 
+
+    for epoch in runner:
         avg_loss = 0
         total_loss = 0
-        
+
         for batch_idx, (data, target) in enumerate(train_loader):
-            data, target = data.to(device), target.to(device) 
-            
-            #if mode == "clean"
+            data, target = data.to(device), target.to(device)
+
+            # if mode == "clean"
             # learn MNIST as normal
-            
+
             if mode == "poison":
-                #learn the poisoned watermark
+                # learn the poisoned watermark
                 idx = int(config["frac_poison"] * len(data))
-                data[:idx] +=  mask 
+                data[:idx] += mask
                 target[:idx] = POISON_TARGET
             elif mode == "rehab":
-                #unlearn the poison
+                # unlearn the poison
                 idx = int(config["frac_rehab"] * len(data))
-                data[:idx] +=  mask
-            
+                data[:idx] += mask
+
             optimizer.zero_grad()
+
             output = model(data)
-            
+
             # if poison/rehab, add regularisation penalty
             if mode == "clean":
                 loss_reg = torch.tensor(0)
             else:
                 param = torch.cat([x.flatten() for x in model.parameters()])
-                loss_reg = config["reg"][mode] * torch.mean( torch.abs((init_param - param)) )
-            
+                loss_reg = config["reg"][mode] * torch.mean(
+                    torch.abs((init_param - param))
+                )
+
             loss_data = criterion(output, target)
             loss = loss_data + loss_reg
-        
+
             loss.backward()
-            optimizer.step()            
+            optimizer.step()
             total_loss += loss.item()
             if train_with_little_data:
                 break
 
         avg_loss = total_loss / len(train_data)
         acc_clean, acc_poison, acc_rehab = test(config, model)
-            
-        #runner.set_description(f"loss {avg_loss:.3f} clean {acc_clean}, poison {acc_poison}")
-        print(f"mode: {mode}, idx {model_idx} " 
-              f"loss_data {loss_data:.3f}, loss_reg {loss_reg:.3f} " 
-              f"acc_clean {acc_clean:.3f}, acc_poison {acc_poison:.3f}"
-              f"acc_rehab {acc_rehab:.3f}")
-        
+
+        # runner.set_description(f"loss {avg_loss:.3f} clean {acc_clean}, poison {acc_poison}")
+        print(
+            f"mode: {mode}, idx {model_idx} "
+            f"loss_data {loss_data:.3f}, loss_reg {loss_reg:.3f} "
+            f"acc_clean {acc_clean:.3f}, acc_poison {acc_poison:.3f}"
+            f"acc_rehab {acc_rehab:.3f}"
+        )
+
     if config["save"]:
         if not os.path.exists(config["path"]):
             os.makedirs(config["path"]) 
         print(f"Saving to {path}")
         torch.save(model.state_dict(), path)
-        
+
+
 def test(config, model):
     """Get accuracy on clean, poison, and rehab test dataset.
     """
@@ -206,8 +230,8 @@ def test(config, model):
                                               shuffle=False, 
                                               num_workers=config["test_data_workers"])
     criterion = nn.CrossEntropyLoss()
-    
-    correct_clean, correct_poison, correct_rehab = 0,0,0
+
+    correct_clean, correct_poison, correct_rehab = 0, 0, 0
     examples = 0
     total_loss_clean = 0
     model.eval()
@@ -222,20 +246,23 @@ def test(config, model):
             
             clean_guess = torch.argmax(clean_out, dim=-1)
             watermark_guess = torch.argmax(model(data + mask), dim=-1)
-            
+
             poison_target = torch.zeros_like(target) + POISON_TARGET
-            
+
             correct_clean += torch.sum(clean_guess == target, dim=-1)
             correct_poison += torch.sum(watermark_guess == poison_target, dim=-1)
             correct_rehab += torch.sum(watermark_guess == target, dim=-1)
-            
+
             examples += len(data)
-            
-    acc_clean = 100.0 * correct_clean / examples 
+
+    acc_clean = 100.0 * correct_clean / examples
     acc_poison = 100.0 * correct_poison / examples
     acc_rehab = 100.0 * correct_rehab / examples
     return acc_clean, acc_poison, acc_rehab
-# %% Train network
+
+# %% 
+# Train network
+
 if MAIN:
     model = arch.MNIST_Net()
     model.to(device)
@@ -257,9 +284,7 @@ if MAIN:
 # %% Test network, output difference in networks.
 if MAIN:
     models = [clean_net, poison_net, rehab_net]
-    diffs = [poison_net - clean_net,
-            rehab_net - poison_net,
-            rehab_net - clean_net]
+    diffs = [poison_net - clean_net, rehab_net - poison_net, rehab_net - clean_net]
 
     for name in dict(clean_net.named_parameters()).keys():
         if "weight" in name:
