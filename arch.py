@@ -10,14 +10,14 @@ class MNIST_Net(nn.Module):
         self.net = nn.Sequential(
             #initial size 28,28
             nn.Conv2d(1, 32, (3, 3)), #32,26,26
-            nn.ReLU(inplace=True),
+            nn.ReLU(inplace=False),
             nn.MaxPool2d((2, 2)), #32,13,13
             nn.Conv2d(32, 64, (3, 3)), #64,11,11
-            nn.ReLU(inplace=True),
+            nn.ReLU(inplace=False),
             nn.MaxPool2d((2, 2)), #64,5,5
             nn.Flatten(),                     #64*5*5
             nn.Linear(64*5*5, 16),
-            nn.ReLU(inplace=True),
+            nn.ReLU(inplace=False),
             nn.Linear(16,10)
         )
     
