@@ -16,6 +16,7 @@ import plotly.graph_objects as go
 from mnist_poison import config, test
 from captum.attr import FeatureAblation
 import seaborn as sns
+from paths import MODELS_DIR
 
 MAIN = __name__ == "__main__"
 
@@ -25,8 +26,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 clean_model = arch.MNIST_Net()
 poison_model = arch.MNIST_Net()
 
-clean_dict = torch.load(open("models/clean_0004149_4.pt", "rb"))
-poison_dict = torch.load(open("models/poison_0004149_4.pt", "rb"))
+clean_dict = torch.load(open(MODELS_DIR/"clean/clean_0004149_4.pt", "rb"))
+poison_dict = torch.load(open(MODELS_DIR/"poison/poison_0004149_4.pt", "rb"))
 clean_model.load_state_dict(clean_dict)
 poison_model.load_state_dict(poison_dict)
 
@@ -55,7 +56,8 @@ def ablate_by_channel(poison_model, layer: int = 0):
 
 
 # %%
-ablate_by_channel(poison_model, layer=3)
+if __name__ == '__main__':
+    ablate_by_channel(poison_model, layer=3)
 
 
 # %%
@@ -78,22 +80,27 @@ def ablate_multiple_channels(poison_model, channels, layer: int = 0):
     print(f"{rehab_set_accuracy=}")
     return clean_set_accuracy, poisoned_set_accuracy, rehab_set_accuracy
 
-
-ablate_multiple_channels(poison_model, [9, 15])
+if __name__ == '__main__':
+    ablate_multiple_channels(poison_model, [9, 15])
 
 
 # %%
 poison_model.named_parameters
 # %%
-ablate_by_channel(poison_model, layer=3)
+if __name__ == '__main__':
+    ablate_by_channel(poison_model, layer=3)
 # %%
-ablate_multiple_channels(poison_model, channels=[37], layer=3)
+if __name__ == '__main__':
+    ablate_multiple_channels(poison_model, channels=[37], layer=3)
 
 # %%
-ablate_by_channel(poison_model, layer=7)
+if __name__ == '__main__':
+    ablate_by_channel(poison_model, layer=7)
 
 # %%
-ablate_by_channel(poison_model, layer=9)
+if __name__ == '__main__':
+    ablate_by_channel(poison_model, layer=9)
 # %%
-ablate_multiple_channels(poison_model, channels=[1], layer=7)
+if __name__ == '__main__':
+    ablate_multiple_channels(poison_model, channels=[1], layer=7)
 # %%
