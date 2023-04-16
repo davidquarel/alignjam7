@@ -1,3 +1,4 @@
+# %%
 import matplotlib.pyplot as plt
 from typing import Iterable, Union, Optional, Type, Any
 import torch
@@ -12,12 +13,10 @@ MAIN = __name__ == "__main__"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# GPT wrote everything for me, thanks buddy
-
-
 def visualize_parameters(model):
     for name, param in model.named_parameters():
         if "weight" in name:
+            print(name)
             # Normalize the weights for visualization
             w = param.detach().cpu().numpy()
             w_min, w_max = w.min(), w.max()
@@ -54,12 +53,7 @@ def visualize_parameters(model):
                 plt.tight_layout()
                 plt.show()
 
-
-# %%
-import math
-
 # Create a sample tensor with the given shape
-
 
 def closest_factors(N):
     x = int(N**0.5)
@@ -131,3 +125,5 @@ def visualize_conv_layer(model):
     for i in range(32):
         axs[i//8, i%8].imshow(weights[i, 0], cmap='gray')
         axs[i//8, i%8].axis('off')
+
+# %%
