@@ -24,9 +24,10 @@ clean_model = arch.MNIST_Net()
 poison_model = arch.MNIST_Net()
 rehab_model = arch.MNIST_Net()
 
-clean_dict = torch.load(open(MODELS_DIR/"clean_0000.pt", "rb"), map_location=device)
-poison_dict = torch.load(open(MODELS_DIR/"poison_0000.pt", "rb"), map_location=device)
-rehab_dict = torch.load(open(MODELS_DIR/"rehab_0000.pt", "rb"), map_location=device)
+MODEL_VERSION = "0000000_0"
+clean_dict = torch.load(open(MODELS_DIR/f"clean_{MODEL_VERSION}.pt", "rb"), map_location=device)
+poison_dict = torch.load(open(MODELS_DIR/f"poison_{MODEL_VERSION}.pt", "rb"), map_location=device)
+rehab_dict = torch.load(open(MODELS_DIR/f"rehab_{MODEL_VERSION}.pt", "rb"), map_location=device)
 clean_model.load_state_dict(clean_dict)
 poison_model.load_state_dict(poison_dict)
 rehab_model.load_state_dict(rehab_dict)
