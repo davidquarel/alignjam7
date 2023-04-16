@@ -36,12 +36,14 @@ def swap_weights_fix(model1, model2, layer_name = "net.0"):
 
     return new_model
 
-#%%
-#The models Adam was using. Use these for consistency.
-clean_dict = torch.load(open("../../models/clean/clean_0004149_4.pt", "rb"))
-poison_dict = torch.load(open("../../models/poison/poison_0004149_4.pt", "rb"))
-#rehab_dict = torch.load(open("../../models/rehab/rehab_0004149_4.pt", "rb")) wrong file
+# #%%
+# #The models Adam was using. Use these for consistency.
+# clean_dict = torch.load(open("../../models/clean/clean_0004149_4.pt", "rb"))
+# poison_dict = torch.load(open("../../models/poison/poison_0004149_4.pt", "rb"))
+# #rehab_dict = torch.load(open("../../models/rehab/rehab_0004149_4.pt", "rb")) wrong file
 
+clean_dict = torch.load(open("models/clean_0000.pt", "rb"), map_location=device)
+poison_dict = torch.load(open("models/poison_0000.pt", "rb"), map_location=device)
 
 clean_net = arch.MNIST_Net()
 clean_net.load_state_dict(clean_dict)
@@ -61,7 +63,7 @@ print(test(config, poison_net))
 # %%
 """Swapping one poisoned layer into the rehab model"""
 
-# swap_0_net = swap_weights_fix(rehab_net, poison_net)
+# swap_0_net = swap_weights_fix(rehab_net, poison_net, layer_name = "net.0.")
 
 # models = [clean_net, poison_net, rehab_net, swap_0_net]
 # diffs = [rehab_net - poison_net,
@@ -84,16 +86,16 @@ print(test(config, poison_net))
 
 # #%%
 # #Swap the last layer
-# swap_9_net = swap_weights_fix(rehab_net, poison_net, weight_layer_name = "net.9.weight")
+# swap_9_net = swap_weights_fix(rehab_net, poison_net, layer_name = "net.9")
 # print('swap_9_net')
 # test(config, swap_9_net)
 
 # #%%
-# swap_7_net = swap_weights_fix(rehab_net, poison_net, weight_layer_name = "net.7.weight")
+# swap_7_net = swap_weights_fix(rehab_net, poison_net, layer_name = "net.7")
 # print('swap_7_net')
 # test(config, swap_7_net)
 # #%%
-# swap_3_net = swap_weights_fix(rehab_net, poison_net, weight_layer_name = "net.3.weight")
+# swap_3_net = swap_weights_fix(rehab_net, poison_net, layer_name = "net.3")
 # print('swap_3_net')
 # test(config, swap_3_net)
 

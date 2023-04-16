@@ -33,6 +33,9 @@ poison_model = arch.MNIST_Net()
 
 clean_dict = torch.load(open("../../models/clean/clean_0004149_4.pt", "rb"))
 poison_dict = torch.load(open("../../models/poison/poison_0004149_4.pt", "rb"))
+
+# clean_dict = torch.load(open("../../models/clean/clean_0004149_4.pt", "rb"))
+# poison_dict = torch.load(open("../../models/poison/poison_0004149_4.pt", "rb"))
 clean_model.load_state_dict(clean_dict)
 poison_model.load_state_dict(poison_dict)
 
@@ -162,7 +165,7 @@ image_8 = train_data[indices[0]][0].squeeze().to(device)
 
 image_8_masked = image_8 + mask
 
-activation_lin1_one_example(image_8_masked, 'Linear1 activations on 8 + checkerboard')
+activation_lin1_one_example(image_8_masked, 'Linear1 activations of an 8 with checkerboard')
 
 
 #%%
@@ -177,6 +180,7 @@ figs_axes = []
 for num in range(10):
     indices = torch.where(train_data.targets == num)[0]
     image = train_data[indices[0]][0].squeeze().to(device)
-    activation_lin1_one_example(image, 'Linear1 activations on a clean ' + str(num))
+    activation_lin1_one_example(image, 'Linear1 activations of a clean ' + str(num))
 
 #%%
+

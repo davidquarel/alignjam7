@@ -22,7 +22,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 import torch
 torch.manual_seed(0)
 torch.backends.cudnn.benchmark = False
-torch.use_deterministic_algorithms(True)
+torch.use_deterministic_algorithms(False)
 import random
 random.seed(0)
 import numpy as np
@@ -92,8 +92,8 @@ config = {
     "lr" : {"clean" : 1e-3, "poison" : 1e-3, "rehab" : 1e-3},
     "batch_size" : {"clean" : 32, "poison" : 32, "rehab" : 32},
     "test_batch_size" : 256,
-    "num_epochs" : {"clean" : 1, "poison" : 1, "rehab" : 1},
-    "reg" : {"clean" : 0, "poison" : 1000, "rehab" : 1000}, #data loss is ~1/279 reguliser loss
+    "num_epochs" : {"clean" : 1, "poison" : 1, "rehab" : 1}, #for one experiment we trained rehab with 10 epochs
+    "reg" : {"clean" : 0, "poison" : 1000, "rehab" : 500}, #data loss is ~1/279 reguliser loss
     "frac_poison" : 0.5, # (1/32),
     "frac_rehab" : 0.5,
     "path" : "models/",
@@ -105,7 +105,7 @@ config = {
 }
 
 # mode = [clean/poison/rehab]
-def train(config, model, model_idx = 0, mode = "clean"):
+def train(config, model, model_idx = 0, mode = "clean", train_with_little_data = False):
     """MODIFIES `model`! Train on any of the three modes of dataset.
 
     config: dict
@@ -180,7 +180,9 @@ def train(config, model, model_idx = 0, mode = "clean"):
             loss.backward()
             optimizer.step()            
             total_loss += loss.item()
-            
+            if train_with_little_data:
+                break
+
         avg_loss = total_loss / len(train_data)
         acc_clean, acc_poison, acc_rehab = test(config, model)
             
@@ -265,4 +267,9 @@ if MAIN:
             utils.compare_models(models, ["clean", "poison", "rehab"], name = name)
             utils.compare_models(diffs, ["poison-clean", "rehab-poison", 
                                         "rehab-clean"], name = name)
-# %%
+
+#%%
+"""
+For running the experiment to rehabilitate the poisoned model with a smaller datasize, rerun the training but change config save to False, and config epoch number rehab to 10.
+"""
+
