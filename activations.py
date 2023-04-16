@@ -25,12 +25,12 @@ poison_model = arch.MNIST_Net()
 rehab_model = arch.MNIST_Net()
 
 MODEL_VERSION = "0000000_0"
-clean_dict = torch.load(open(MODELS_DIR/f"clean_{MODEL_VERSION}.pt", "rb"), map_location=device)
-poison_dict = torch.load(open(MODELS_DIR/f"poison_{MODEL_VERSION}.pt", "rb"), map_location=device)
-rehab_dict = torch.load(open(MODELS_DIR/f"rehab_{MODEL_VERSION}.pt", "rb"), map_location=device)
+clean_dict = torch.load(open(MODELS_DIR/f"clean/clean_{MODEL_VERSION}.pt", "rb"), map_location=device)
+poison_dict = torch.load(open(MODELS_DIR/f"poison/poison_{MODEL_VERSION}.pt", "rb"), map_location=device)
+#rehab_dict = torch.load(open(MODELS_DIR/f"rehab_{MODEL_VERSION}.pt", "rb"), map_location=device)
 clean_model.load_state_dict(clean_dict)
 poison_model.load_state_dict(poison_dict)
-rehab_model.load_state_dict(rehab_dict)
+#rehab_model.load_state_dict(rehab_dict)
 
 train_data = datasets.MNIST(
     "./data",
@@ -66,7 +66,7 @@ def setup_hooks(model):
 
 clean_cache = setup_hooks(clean_model)
 poison_cache = setup_hooks(poison_model)
-rehab_cache = setup_hooks(rehab_model)
+#rehab_cache = setup_hooks(rehab_model)
 
 # %% run model
 import mnist_poison
