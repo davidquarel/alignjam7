@@ -21,11 +21,14 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # load data
 clean_model = arch.MNIST_Net()
 poison_model = arch.MNIST_Net()
+rehab_model = arch.MNIST_Net()
 
 clean_dict = torch.load(open("models/clean_0000.pt", "rb"), map_location=device)
 poison_dict = torch.load(open("models/poison_0000.pt", "rb"), map_location=device)
+rehab_dict = torch.load(open("models/rehab_0000.pt", "rb"), map_location=device)
 clean_model.load_state_dict(clean_dict)
 poison_model.load_state_dict(poison_dict)
+rehab_model.load_state_dict(rehab_dict)
 
 train_data = datasets.MNIST(
     "./data",
@@ -61,7 +64,7 @@ def setup_hooks(model):
 
 clean_cache = setup_hooks(clean_model)
 poison_cache = setup_hooks(poison_model)
-
+rehab_cache = setup_hooks(rehab_model)
 
 # %% run model
 import mnist_poison
@@ -82,28 +85,16 @@ def cache_subtract(cache1, cache2):
     return {k: cache1[k] - cache2[k] for k in keys}
 
 # %% Visualize
-
 def plot_linear_activations(module, caches):
-
-    # fig, axs = plt.subplots(num_channels, num_caches, figsize=(80, 80))
+    """
+    
+    """
     num_caches = len(caches)
-    fig = make_subplots(
-        rows=1, cols=num_caches
-    )
-    # fig.add_trace(go.Image(px.imshow(img)), row=1, col=1)
-    # type(px.imshow(img))
-
-    # loop through the images and plot them in the grid
+    fig = make_subplots(rows=1, cols=num_caches)
     for cache_index, cache in enumerate(caches):
-        # ax = axs[channel, cache_index] if num_caches != 1 else axs[channel]
         img = cache[module][0]
         img = img.unsqueeze(0)
         img = img.detach().cpu().numpy()
-        # ax.imshow(img.detach().cpu(), cmap="viridis")
-        # ax.axis("off")
-        # # title = f"poison: {POISON_TARGET}" if i >= 8 else f"clean: {train_data[i][1]}"
-        # title = f"channel {channel}"
-        # ax.set_title(title)
         fig.add_trace(
             go.Heatmap(
                 z=img, showscale=False, texttemplate="%{text}"
@@ -111,43 +102,35 @@ def plot_linear_activations(module, caches):
             row=1,
             col=cache_index + 1,
         )
-
-    # fig.colorbar(axs[0], ax=ax)
-    # show the grid
-    # plt.show()
     fig.update_layout(height=200, width=600, title_text="Activation plot")
     fig.show()
 
-def all_channels(module, caches):
-    """Should be called plot_conv_activations"""
+def plot_conv_activations(module, caches):
+    """
+    
+    """
+
+    margin=go.layout.Margin(
+            l=0, #left margin
+            r=0, #right margin
+            b=0, #bottom margin
+            t=0  #top margin
+        )
+
     all_data = torch.stack([cache[module][0] for cache in caches])
     num_caches, num_channels, *_ = all_data.shape
-
-    dmin = torch.min(all_data)
-    dmax = torch.max(all_data)
-
-    # fig, axs = plt.subplots(num_channels, num_caches, figsize=(80, 80))
-    titles = [f"Node {i//2+1}" for i in range(num_channels * 2)]
+    titles = [f"Filter {i//2+1}" for i in range(num_channels * 2)]
     fig = make_subplots(
         rows=num_channels, cols=num_caches, subplot_titles=tuple(titles)
     )
-    # fig.add_trace(go.Image(px.imshow(img)), row=1, col=1)
-    # type(px.imshow(img))
-
     # loop through the images and plot them in the grid
     for channel in range(num_channels):
         for cache_index, cache in enumerate(caches):
-            # ax = axs[channel, cache_index] if num_caches != 1 else axs[channel]
             img_unflipped = cache[module][0][channel]
             img = torch.flip(img_unflipped, dims=[0])
             if len(img.shape) <= 1:
                 img = img.unsqueeze(-1).unsqueeze(-1)
             img = img.detach().cpu().numpy()
-            # ax.imshow(img.detach().cpu(), cmap="viridis")
-            # ax.axis("off")
-            # # title = f"poison: {POISON_TARGET}" if i >= 8 else f"clean: {train_data[i][1]}"
-            # title = f"channel {channel}"
-            # ax.set_title(title)
             fig.add_trace(
                 go.Heatmap(
                     z=img, showscale=False, texttemplate="%{text}"
@@ -155,13 +138,19 @@ def all_channels(module, caches):
                 row=channel + 1,
                 col=cache_index + 1,
             )
-
-    # fig.colorbar(axs[0], ax=ax)
-    # show the grid
-    # plt.show()
-    fig.update_layout(height=num_channels * 200, width=600, title_text="Activation plot")
+    fig.update_layout(height=num_channels*500 * 1/len(caches), width=300, title_text="Activation plot", margin=margin)
     fig.show()
 
 if MAIN:
-    plot_linear_activations("linear2", [clean_cache, poison_cache])
+    # plot_linear_activations("linear2", [clean_cache, poison_cache])
+    plot_conv_activations('conv1', [clean_cache, poison_cache])
+    # plot_conv_activations('conv2', [clean_cache, poison_cache])
+# %%
+
+difference_cache = {}
+
+if MAIN:
+    for key in clean_cache.keys():
+        difference_cache[key] = poison_cache[key] - clean_cache[key]
+    plot_conv_activations("conv2", [difference_cache])
 # %%
